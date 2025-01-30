@@ -52,7 +52,7 @@ func TestBlobToKZGCommitment(t *testing.T) {
 				require.False(t, testCaseValid)
 				return
 			}
-			gotCommitment, err := ctx.BlobToKZGCommitment(blob, NumGoRoutines)
+			gotCommitment, err := ctx.BlobToKZGCommitment(blob[:], NumGoRoutines)
 			if err != nil {
 				require.False(t, testCaseValid)
 				return
@@ -98,7 +98,7 @@ func TestComputeKZGProof(t *testing.T) {
 				require.False(t, testCaseValid)
 				return
 			}
-			proof, outputPoint, err := ctx.ComputeKZGProof(blob, inputPoint, NumGoRoutines)
+			proof, outputPoint, err := ctx.ComputeKZGProof(blob[:], inputPoint, NumGoRoutines)
 			if err != nil {
 				require.False(t, testCaseValid)
 				return
@@ -148,7 +148,7 @@ func TestComputeBlobKZGProof(t *testing.T) {
 				require.False(t, testCaseValid)
 				return
 			}
-			proof, err := ctx.ComputeBlobKZGProof(blob, commitment, NumGoRoutines)
+			proof, err := ctx.ComputeBlobKZGProof(blob[:], commitment, NumGoRoutines)
 			if err != nil {
 				require.False(t, testCaseValid)
 				return
@@ -265,7 +265,7 @@ func TestVerifyBlobKZGProof(t *testing.T) {
 				return
 			}
 
-			err = ctx.VerifyBlobKZGProof(blob, commitment, proof)
+			err = ctx.VerifyBlobKZGProof(blob[:], commitment, proof)
 
 			// Test specifically distinguish between the test failing
 			// because of the pairing check and failing because of
@@ -306,14 +306,14 @@ func TestVerifyBlobKZGProofBatch(t *testing.T) {
 			require.NoError(t, err)
 			testCaseValid := test.ProofIsValid != nil
 
-			var blobs []*gokzg4844.Blob
+			var blobs []gokzg4844.BlobRef
 			for _, b := range test.Input.Blobs {
 				blob, err := hexStrToBlob(b)
 				if err != nil {
 					require.False(t, testCaseValid)
 					return
 				}
-				blobs = append(blobs, blob)
+				blobs = append(blobs, blob[:])
 			}
 
 			var commitments []gokzg4844.KZGCommitment
@@ -355,18 +355,18 @@ func TestVerifyBlobKZGProofBatch(t *testing.T) {
 	}
 }
 
-func hexStrToBlob(hexStr string) (*gokzg4844.Blob, error) {
+func hexStrToBlob(hexStr string) (gokzg4844.Blob, error) {
 	var blob gokzg4844.Blob
 	byts, err := hexStrToBytes(hexStr)
 	if err != nil {
-		return nil, err
+		return blob, err
 	}
 
 	if len(blob) != len(byts) {
-		return nil, fmt.Errorf("blob does not have the correct length, %d ", len(byts))
+		return blob, fmt.Errorf("blob does not have the correct length, %d ", len(byts))
 	}
 	copy(blob[:], byts)
-	return &blob, nil
+	return blob, nil
 }
 
 func hexStrToScalar(hexStr string) (gokzg4844.Scalar, error) {

@@ -12,9 +12,9 @@ import (
 // If the way computeChallenge is computed is updated
 // then this test will fail
 func TestComputeChallengeInterop(t *testing.T) {
-	blob := &Blob{}
+	blob := Blob{}
 	commitment := SerializeG1Point(bls12381.G1Affine{})
-	challenge := computeChallenge(blob, KZGCommitment(commitment))
+	challenge := computeChallenge(blob[:], KZGCommitment(commitment))
 	expected := []byte{
 		0x04, 0xb7, 0xb2, 0x2a, 0xf6, 0x3d, 0x2b, 0x2f,
 		0x1c, 0xed, 0x8d, 0x55, 0x05, 0x60, 0xe5, 0xd1,
@@ -38,7 +38,7 @@ func TestTo16Bytes(t *testing.T) {
 
 func BenchmarkComputeChallenge(b *testing.B) {
 	var (
-		blob       = &Blob{}
+		blob       = Blob{}
 		commitment = SerializeG1Point(bls12381.G1Affine{})
 		challenge  fr.Element
 		want       = []byte{
@@ -51,7 +51,7 @@ func BenchmarkComputeChallenge(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for n := 0; n < b.N; n++ {
-		challenge = computeChallenge(blob, KZGCommitment(commitment))
+		challenge = computeChallenge(blob[:], KZGCommitment(commitment))
 	}
 	have := SerializeScalar(challenge)
 	require.Equal(b, want, have[:])

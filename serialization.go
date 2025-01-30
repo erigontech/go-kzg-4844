@@ -55,6 +55,10 @@ type (
 	// [Blob]: https://github.com/ethereum/consensus-specs/blob/017a8495f7671f5fff2075a9bfc9238c1a0982f8/specs/deneb/polynomial-commitments.md#custom-types
 	Blob [ScalarsPerBlob * SerializedScalarSize]byte
 
+	// Auxiliary type to pass blobs by reference (fast) rather than value (slow).
+	// The slice MUST be of the same length as a Blob, i.e. ScalarsPerBlob * SerializedScalarSize
+	BlobRef []byte
+
 	// KZGProof is a serialized commitment to the quotient polynomial.
 	//
 	// It matches [KZGProof] in the spec.
@@ -107,7 +111,7 @@ func DeserializeKZGProof(proof KZGProof) (bls12381.G1Affine, error) {
 // DeserializeBlob implements [blob_to_polynomial].
 //
 // [blob_to_polynomial]: https://github.com/ethereum/consensus-specs/blob/017a8495f7671f5fff2075a9bfc9238c1a0982f8/specs/deneb/polynomial-commitments.md#blob_to_polynomial
-func DeserializeBlob(blob *Blob) (kzg.Polynomial, error) {
+func DeserializeBlob(blob BlobRef) (kzg.Polynomial, error) {
 	poly := make(kzg.Polynomial, ScalarsPerBlob)
 	for i := 0; i < ScalarsPerBlob; i++ {
 		chunk := blob[i*SerializedScalarSize : (i+1)*SerializedScalarSize]
@@ -140,12 +144,12 @@ func SerializeScalar(element fr.Element) Scalar {
 //
 // Note: This method is never used in the API because we always expect a byte array and will never receive deserialized
 // field elements. We include it so that upstream fuzzers do not need to reimplement it.
-func SerializePoly(poly kzg.Polynomial) *Blob {
+func SerializePoly(poly kzg.Polynomial) Blob {
 	var blob Blob
 	for i := 0; i < ScalarsPerBlob; i++ {
 		chunk := blob[i*SerializedScalarSize : (i+1)*SerializedScalarSize]
 		serScalar := SerializeScalar(poly[i])
 		copy(chunk, serScalar[:])
 	}
-	return &blob
+	return blob
 }

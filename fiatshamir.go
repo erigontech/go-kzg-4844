@@ -19,11 +19,11 @@ const DomSepProtocol = "FSBLOBVERIFY_V1_"
 // [compute_challenge]: https://github.com/ethereum/consensus-specs/blob/017a8495f7671f5fff2075a9bfc9238c1a0982f8/specs/deneb/polynomial-commitments.md#compute_challenge
 //
 // [hash_to_bls_field]: https://github.com/ethereum/consensus-specs/blob/017a8495f7671f5fff2075a9bfc9238c1a0982f8/specs/deneb/polynomial-commitments.md#hash_to_bls_field
-func computeChallenge(blob *Blob, commitment KZGCommitment) fr.Element {
+func computeChallenge(blob BlobRef, commitment KZGCommitment) fr.Element {
 	h := sha256.New()
 	h.Write([]byte(DomSepProtocol))
 	h.Write(u64ToByteArray16(ScalarsPerBlob))
-	h.Write(blob[:])
+	h.Write(blob)
 	h.Write(commitment[:])
 
 	digest := h.Sum(nil)

@@ -40,23 +40,23 @@ func TestNonCanonicalSmoke(t *testing.T) {
 	blobGood := GetRandBlob(123456789)
 	blobBad := GetRandBlob(123456789)
 	unreducedScalar := nonCanonicalScalar(123445)
-	modifyBlob(blobBad, unreducedScalar, 0)
+	modifyBlob(blobBad[:], unreducedScalar, 0)
 
-	commitment, err := ctx.BlobToKZGCommitment(blobGood, NumGoRoutines)
+	commitment, err := ctx.BlobToKZGCommitment(blobGood[:], NumGoRoutines)
 	require.NoError(t, err)
-	_, err = ctx.BlobToKZGCommitment(blobBad, NumGoRoutines)
+	_, err = ctx.BlobToKZGCommitment(blobBad[:], NumGoRoutines)
 	require.Error(t, err, "expected an error as we gave a non-canonical blob")
 
 	inputPointGood := GetRandFieldElement(123)
 	inputPointBad := createScalarNonCanonical(inputPointGood)
-	proof, claimedValueGood, err := ctx.ComputeKZGProof(blobGood, inputPointGood, NumGoRoutines)
+	proof, claimedValueGood, err := ctx.ComputeKZGProof(blobGood[:], inputPointGood, NumGoRoutines)
 	require.NoError(t, err)
 	claimedValueBad := createScalarNonCanonical(claimedValueGood)
 
-	_, _, err = ctx.ComputeKZGProof(blobGood, inputPointBad, NumGoRoutines)
+	_, _, err = ctx.ComputeKZGProof(blobGood[:], inputPointBad, NumGoRoutines)
 	require.Error(t, err, "expected an error since input point was not canonical")
 
-	_, _, err = ctx.ComputeKZGProof(blobBad, inputPointGood, NumGoRoutines)
+	_, _, err = ctx.ComputeKZGProof(blobBad[:], inputPointGood, NumGoRoutines)
 	require.Error(t, err, "expected an error since blob was not canonical")
 
 	err = ctx.VerifyKZGProof(commitment, inputPointGood, claimedValueGood, proof)
@@ -68,19 +68,19 @@ func TestNonCanonicalSmoke(t *testing.T) {
 	err = ctx.VerifyKZGProof(commitment, inputPointBad, claimedValueGood, proof)
 	require.Error(t, err, "expected an error since input point was not canonical")
 
-	blobProof, err := ctx.ComputeBlobKZGProof(blobBad, commitment, NumGoRoutines)
+	blobProof, err := ctx.ComputeBlobKZGProof(blobBad[:], commitment, NumGoRoutines)
 	require.Error(t, err, "expected an error since blob was not canonical")
 
-	err = ctx.VerifyBlobKZGProof(blobBad, commitment, blobProof)
+	err = ctx.VerifyBlobKZGProof(blobBad[:], commitment, blobProof)
 	require.Error(t, err, "expected an error since blob was not canonical")
 
-	err = ctx.VerifyBlobKZGProofBatch([]*gokzg4844.Blob{blobBad}, []gokzg4844.KZGCommitment{commitment}, []gokzg4844.KZGProof{blobProof})
+	err = ctx.VerifyBlobKZGProofBatch([]gokzg4844.BlobRef{blobBad[:]}, []gokzg4844.KZGCommitment{commitment}, []gokzg4844.KZGProof{blobProof})
 	require.Error(t, err, "expected an error since blob was not canonical")
 }
 
 // Below are helper methods which allow us to change a serialized element into
 // its non-canonical counterpart by adding the modulus
-func modifyBlob(blob *gokzg4844.Blob, newValue gokzg4844.Scalar, index int) {
+func modifyBlob(blob gokzg4844.BlobRef, newValue gokzg4844.Scalar, index int) {
 	copy(blob[index:index+gokzg4844.SerializedScalarSize], newValue[:])
 }
 
